@@ -28,11 +28,14 @@ public:
 	int maxFreq;//
 	int maxVolume;//16 - 16GB
 	char type;//'3' - ddr3
+	//
+	friend ostream& operator<<(ostream&, const CPU&);
 };
 class GPU :public Unit {
 public:
 	virtual ~GPU();
 	int memoryVolume;
+	friend ostream& operator<<(ostream&, const GPU&);
 };
 class RAM :public Unit {
 public:
@@ -41,6 +44,7 @@ public:
 	int memVolume;//16 - 16GB
 	char type;//'3' - ddr3
 	virtual ~RAM();
+	friend ostream& operator<<(ostream&, const RAM&);
 };
 class SATA :public Unit {
 public:
@@ -53,11 +57,11 @@ public:
 	CPU* cpu;
 	char* soket;//------f
 	GPU* gpu;
-	RAM* ram;//array
-	int curRamUnit = 0;
+	RAM* ram[4];//array
+	int curRamUnit;
 	int maxCountRAMUnits;//------f
-	SATA* sata;//array
-	int curSATAUnit=0;
+	SATA* sata[4];//array
+	int curSATAUnit;
 	int maxCountSATAunits;//------f
 	//RAM support
 	int minFreq;//800 - 800MHz
@@ -68,6 +72,7 @@ public:
 	void list();
 	static void newMotherBoard();
 	MotherBoard();
+	MotherBoard(const MotherBoard&);
 	friend ostream& operator<<(ostream&, const MotherBoard&);
 };
 class Drive : public SATA {//HDD, SSD

@@ -19,8 +19,8 @@ Box::~Box() {
 void Box::clear() {
 	//drow
 	rect(0, 0, 29, 12, '.');//box
-	rect(1, 1, 8, 2, 'X');//no power
-	rect(1,4,18,11,'+');//no motherboard
+	rect(1, 1, 8, 2, 'x');//no power
+	rect(1,4,18,11,'x');//no motherboard
 	
 }
 void Box::show() {
@@ -99,7 +99,7 @@ void Box::addPower() {
 		f >> pwr.pwr;
 		if (strcmp(pwr.name, "") != 0) {
 			vPow.push_back(pwr);
-			cout << pwr;
+			cout << pwr<<endl;
 		}
 	}
 	//select name
@@ -173,7 +173,13 @@ void Box::delUnitFromMaket() {
 		power = 0;
 		rect(1,1,8,2,'X');
 		break;
-	case 'm':; break;
+	case 'm':
+		delete mabd;
+		mabd = 0;
+		clear();//clear all
+		if(power)
+			rect(1, 1, 8, 2, '+');//add power
+		break;
 	}
 	if (mabd) switch (select) {
 	case 'g':break;
@@ -201,11 +207,15 @@ void Box::addMotherBoard() {
 		f >> bf;//#
 		f.getline(mb.name, 255, '^');
 		f.getline(mb.soket, 255, '^');
-		f>> mb.maxCountRAMUnits >> mb.maxCountSATAunits
-			>> mb.minFreq >> mb.maxFreq >> mb.maxVolume >> mb.type;
+		f >> mb.maxCountRAMUnits;
+		f >> mb.maxCountSATAunits;
+		f >> mb.minFreq;
+		f >> mb.maxFreq;
+		f >> mb.maxVolume;
+		f >> mb.type;
 		if (strcmp(mb.name, "") != 0) {
 			vPow.push_back(mb);
-			cout << mb;
+			cout << mb << endl;
 		}
 	}
 	//select name
@@ -246,8 +256,9 @@ void Box::addMotherBoard() {
 }
 void Box::list() {
 	cout << "Box:\n";
-	if (power) cout << *power;
+	if (power) cout << *power << endl;
 	if (mabd) mabd->list();
+	cout << endl;
 }
 
 //Power
@@ -266,7 +277,7 @@ Power::~Power() {
 	
 }
 ostream& operator<<(ostream& out, const Power& pwr) {
-	out << pwr.name << '\t' << pwr.pwr << endl;
+	out << pwr.name << '\t' << pwr.pwr<<" Watt";
 	return out;
 }
 void Power::newPower() {
@@ -301,16 +312,33 @@ void Power::newPower() {
 
 
 }
+
 //MotherBoard
 ostream& operator<<(ostream& out, const MotherBoard& mb) {
 	out << mb.name << ' ' << mb.soket << ' ' << mb.maxCountRAMUnits << ' '
 		<< mb.maxCountSATAunits << ' ' << mb.minFreq << ' '
-		<< mb.maxFreq << ' ' << mb.maxVolume << ' ' << mb.type
-		<< endl;
+		<< mb.maxFreq << ' ' << mb.maxVolume << "GB DDR" << mb.type;
 	return out;
 }
 MotherBoard::MotherBoard() {
+	curRamUnit = curSATAUnit = 0;
+	cpu = 0;
+	gpu = 0;
+	
 	//cout << "new MotherBoard\n";
+}
+MotherBoard::MotherBoard(const MotherBoard& obj) {
+	this->name = new char[strlen(obj.name) + 1];
+	strcpy(this->name, obj.name);
+	this->soket = new char[strlen(obj.soket) + 1];
+	strcpy(this->soket, obj.soket);
+	maxCountRAMUnits = obj.maxCountRAMUnits;
+	maxCountSATAunits = obj.maxCountSATAunits;
+	minFreq = obj.minFreq;
+	maxFreq = obj.maxFreq;
+	maxVolume = obj.maxVolume;
+	type = obj.type;
+	
 }
 MotherBoard::~MotherBoard() {
 	cout << "free MotherBoard\n";
@@ -354,8 +382,9 @@ void MotherBoard::newMotherBoard() {
 			ofstream f("mother.txt", ios::app);
 			if (f) {
 				f << '#' << mb.name << '^' << mb.soket << '^'
-				<< mb.maxCountRAMUnits << mb.maxCountSATAunits
-				<< mb.minFreq << mb.maxFreq << mb.maxVolume << mb.type;
+					<< mb.maxCountRAMUnits <<' '<< mb.maxCountSATAunits<<' '
+					<< mb.minFreq <<' '<< mb.maxFreq<<' ' << mb.maxVolume<<' '
+					<< mb.type << endl;
 			}
 			f.close();
 			break;
@@ -366,15 +395,44 @@ void MotherBoard::newMotherBoard() {
 	} while (true);
 
 }
+void MotherBoard::list() {
+	cout << "MotherBoard: " << *this << endl;
+	if (this->cpu) cout << "CPU: " << cpu << endl;;
+	if (this->gpu) cout<<"GPU: "<<gpu<<endl;
+	int i;
+	for (i = 0; i < curRamUnit; i++)
+		cout << (*ram[i]) << endl;
+	/*
+	for (i = 0; i < curSATAUnit; i++)
+		cout << (*sata[i]) << endl;
+		*/
+}
 
-void MotherBoard::list() {}
-
-//
+//CPU
 CPU::~CPU() { cout << "free CPU\n"; }
+ostream& operator<<(ostream& out, const CPU& cpu) {
+	out << cpu.name << ' ' << cpu.soket << ' ' << cpu.minFreq << ' '
+		<< cpu.maxFreq << ' ' << cpu.maxVolume << "GB DDR" << cpu.type;
+	return out;
+}
+//GPU
 GPU::~GPU() { cout << "free GPU\n"; }
+ostream& operator<<(ostream& out, const GPU& gpu) {
+	out << gpu.name << ' ' << gpu.memoryVolume<<"GB";
+	return out;
+}
+//RAM
 RAM::~RAM() { cout << "free GPU\n"; }
+ostream& operator<<(ostream& out, const RAM& ram) {
+	out << ram.name << ' ' << ram.minFreq << ' ' << ram.maxFreq << ' '
+		<< ram.memVolume << "GB DDR" << ram.type;
+	return out;
+}
+//SATA
 SATA::~SATA() { cout << "free SATA\n"; }
+//DRIVE
 Drive::~Drive() { cout << "free Drive\n"; }
+//ROM
 ROM::~ROM() { cout << "free ROM"; }
 
 
