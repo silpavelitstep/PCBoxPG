@@ -52,7 +52,7 @@ void Box::newUnit() {
 	cin.getline(buf, 99);
 	switch (select) {
 	case 'p':Power::newPower(); break;
-	case 'm':break;
+	case 'm':MotherBoard::newMotherBoard(); break;
 	case 'g':break;
 	case 'c':break;
 	case 'r':break;
@@ -254,8 +254,66 @@ void Power::newPower() {
 
 }
 //MotherBoard
+MotherBoard::MotherBoard() {
+	//cout << "new MotherBoard\n";
+}
+MotherBoard::~MotherBoard() {
+	cout << "free MotherBoard\n";
+}
+void MotherBoard::newMotherBoard() {
+	MotherBoard mb;
+	char select;
+	do {
+		//name
+		cout << "Input name: ";
+		char tmp[256];
+		cin.getline(tmp, 255);
+		mb.name = new char[strlen(tmp) + 1];
+		strcpy(mb.name, tmp);
+		//soket
+		cout << "Input soket: ";
+		cin.getline(tmp, 255);
+		mb.soket = new char[strlen(tmp) + 1];
+		strcpy(mb.soket, tmp);
+		//RAM
+		cout << "Input RAM. Set throw space:\n"
+			<< "count of DRR units, min freq, "
+			<< "max freq, max volume,"
+			<< "type (f.e. '3' for DDR3):\n";
+		cin >> mb.maxCountRAMUnits >> mb.minFreq
+			>> mb.maxFreq >> mb.maxVolume >> mb.type;
+		//Other
+		cout << "input max count SATA units: ";
+		cin >> mb.maxCountSATAunits;
+				
+		//save or not
+		cout << "save to file?\n"
+			<< "'y' - yes,\n"
+			<< "any char for exit\n"
+			<< "'c' - clear,\n"
+			<< endl;
+		cin >> select;
+		char buf[100];
+		cin.getline(buf, 99);
+		if (select == 'y') {
+			ofstream f("mother.txt", ios::app);
+			if (f) {
+				f << '#' << mb.name << '^' << mb.soket << '^'
+				<< mb.maxCountRAMUnits << mb.maxCountSATAunits
+				<< mb.minFreq << mb.maxFreq << mb.maxVolume << mb.type;
+			}
+			f.close();
+			break;
+		}
+		else if (select == 'c')
+			continue;
+		break;
+	} while (true);
+
+}
+
 void MotherBoard::list() {}
-MotherBoard::~MotherBoard() { cout << "free MotherBoard\n"; }
+
 //
 CPU::~CPU() { cout << "free CPU\n"; }
 GPU::~GPU() { cout << "free GPU\n"; }

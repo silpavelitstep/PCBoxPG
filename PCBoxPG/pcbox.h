@@ -51,12 +51,14 @@ class MotherBoard :public Unit {
 public:
 	virtual ~MotherBoard();
 	CPU* cpu;
-	char* soket;
+	char* soket;//------f
 	GPU* gpu;
-	RAM* ram[4];
+	RAM* ram;//array
 	int curRamUnit = 0;
-	SATA* sata[6];
-	int curSATAUnit = 0;
+	int maxCountRAMUnits;//------f
+	SATA* sata;//array
+	int curSATAUnit=0;
+	int maxCountSATAunits;//------f
 	//RAM support
 	int minFreq;//800 - 800MHz
 	int maxFreq;//
@@ -64,8 +66,9 @@ public:
 	char type;//'3' - ddr3
 public:
 	void list();
+	static void newMotherBoard();
+	MotherBoard();
 };
-
 class Drive : public SATA {//HDD, SSD
 	int volume;
 	char typeDrive;//'h' - hdd, 's' - ssd
