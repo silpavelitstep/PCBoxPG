@@ -15,7 +15,6 @@ public:
 	virtual ~Power();
 public:
 	static void newPower();
-	static void takePower();
 	Power(const Power&);
 	Power();
 	friend ostream& operator<<(ostream&, const Power&);

@@ -123,9 +123,7 @@ void Box::addPower() {
 			strcpy(power->name, p.name);
 			power->pwr = p.pwr;
 			//drow
-			for (int y = 1; y <= 2; y++)
-				for (int x = 1; x <= 8; x++)
-					maket[y][x] = '+';
+			rect(1, 1, 8, 2, '+');
 			break;//for vPow
 		}
 
@@ -179,7 +177,8 @@ void Box::delUnitFromMaket() {
 	switch (select) {
 	case 'p':
 		delete power;
-		
+		power = 0;
+		rect(1,1,8,2,'X');
 		break;
 	case 'm':; break;
 	}
@@ -191,8 +190,10 @@ void Box::delUnitFromMaket() {
 	}
 }
 void Box::rect(int x1, int y1, int x2, int y2, char c) {
-	int xmin,ymin,xmax,ymax
-	for(int y=y1)
+	for (int y = y1; y <= y2; y++) {
+		for (int x = x1; x <= x2; x++)
+			maket[y][x] = c;
+	}
 }
 void Box::addMotherBoard() {}
 void Box::list() {
@@ -252,10 +253,10 @@ void Power::newPower() {
 
 
 }
-
-
-
+//MotherBoard
+void MotherBoard::list() {}
 MotherBoard::~MotherBoard() { cout << "free MotherBoard\n"; }
+//
 CPU::~CPU() { cout << "free CPU\n"; }
 GPU::~GPU() { cout << "free GPU\n"; }
 RAM::~RAM() { cout << "free GPU\n"; }
