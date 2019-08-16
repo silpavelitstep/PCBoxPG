@@ -1,0 +1,4 @@
+#PowerX^500
+#NewPower^250
+#PowerMMX^900
+#Gex^250
