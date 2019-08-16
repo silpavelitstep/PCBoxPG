@@ -63,6 +63,8 @@ public:
 	int maxFreq;//
 	int maxVolume;//16 - 16GB
 	char type;//'3' - ddr3
+public:
+	void list();
 };
 
 class Drive : public SATA {//HDD, SSD
@@ -74,7 +76,7 @@ class ROM : public SATA {//CD\DVD\BD ROM\RW
 	char typeDisk;//'c' -cd, 'd' - dvd+cd, 'b' - BlueRay+dvd+cd
 	virtual ~ROM();
 };
-class Box: public Unit {
+class Box{
 public:
 	Power* power;
 	MotherBoard* mb;
@@ -85,13 +87,14 @@ public:
 	void clear();
 	void show();
 	void menu();
+	void list();
 private:
 	void newUnit();
 	void addUnitToMaket();
-	void newPower();
-	void newMotherBoard();
+	void addPower();
+	void addMotherBoard();
 	void delUnitFromMaket();
-	
+	void rect(int, int, int, int, char);
 	
 };
 
