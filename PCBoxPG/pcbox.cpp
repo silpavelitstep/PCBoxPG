@@ -14,21 +14,14 @@ Unit::~Unit() {
 Box::~Box() {
 	//cout << "free PCBox\n";
 	if (power) delete power;
-	if (mb) delete mb;
+	if (mabd) delete mabd;
 }
 void Box::clear() {
-	int x, y;
-	for (y = 0; y <= 12; y++)
-		for (x = 0; x <= 29; x++)
-			maket[y][x] = '.';
-	//power
-	for (y = 1; y <= 2; y++)
-		for (x = 1; x <= 8; x++)
-			maket[y][x] = 'X';
-	//motherboard
-	for(y=4;y<=11;y++)
-		for(x=1;x<=18;x++)
-			maket[y][x] = 'X';
+	//drow
+	rect(0, 0, 29, 12, '.');//box
+	rect(1, 1, 8, 2, 'X');//no power
+	rect(1,4,18,11,'+');//no motherboard
+	
 }
 void Box::show() {
 	for (int y = 0; y <= 12; y++) {
@@ -135,7 +128,7 @@ void Box::addUnitToMaket() {
 	cout << "select type unit:\n"
 		<< "'p' - Power,\n"
 		<< "'m' - motherboard,\n";
-	if(mb)
+	if(mabd)
 		cout<< "'g' - GPU,\n"
 			<< "'c' - CPU,\n"
 			<< "'r' - RAM,\n"
@@ -151,7 +144,7 @@ void Box::addUnitToMaket() {
 	case 'p':Box::addPower(); break;
 	case 'm':Box::addMotherBoard(); break;
 	}
-	if (mb) switch (select){
+	if (mabd) switch (select){
 	case 'g':break;
 	case 'c':break;
 	case 'r':break;
@@ -162,7 +155,7 @@ void Box::delUnitFromMaket() {
 	cout << "select unit for delete:\n"
 		<< "'p' - Power,\n"
 		<< "'m' - motherboard,\n";
-	if (mb)
+	if (mabd)
 		cout << "'g' - GPU,\n"
 		<< "'c' - CPU,\n"
 		<< "'r' - RAM,\n"
@@ -182,7 +175,7 @@ void Box::delUnitFromMaket() {
 		break;
 	case 'm':; break;
 	}
-	if (mb) switch (select) {
+	if (mabd) switch (select) {
 	case 'g':break;
 	case 'c':break;
 	case 'r':break;
@@ -195,11 +188,66 @@ void Box::rect(int x1, int y1, int x2, int y2, char c) {
 			maket[y][x] = c;
 	}
 }
-void Box::addMotherBoard() {}
+void Box::addMotherBoard() {
+	system("CLS");
+	ifstream f("mother.txt");
+	char bf;
+	MotherBoard mb;
+	mb.name = new char[256];
+	mb.soket = new char[256];
+	vector<MotherBoard> vPow;
+	//load from file to vector
+	while (f) {
+		f >> bf;//#
+		f.getline(mb.name, 255, '^');
+		f.getline(mb.soket, 255, '^');
+		f>> mb.maxCountRAMUnits >> mb.maxCountSATAunits
+			>> mb.minFreq >> mb.maxFreq >> mb.maxVolume >> mb.type;
+		if (strcmp(mb.name, "") != 0) {
+			vPow.push_back(mb);
+			cout << mb;
+		}
+	}
+	//select name
+	cout << "check name:";
+	cin.getline(mb.name, 255);
+	for (MotherBoard p : vPow) {
+		if (strcmp(p.name, mb.name) == 0) {
+			if (mabd == 0)
+				mabd = new MotherBoard();
+			//copy
+			if (mabd->name) delete[] mabd->name;
+			mabd->name = new char[strlen(p.name) + 1];
+			strcpy(mabd->name, p.name);
+			if (mabd->soket) delete[] mabd->soket;
+			mabd->soket = new char[strlen(p.soket) + 1];
+			strcpy(mabd->soket, p.soket);
+			mabd->maxCountRAMUnits = p.maxCountRAMUnits;
+			mabd->maxCountSATAunits = p.maxCountSATAunits;
+			mabd->minFreq = p.minFreq;
+			mabd->maxFreq = p.maxFreq;
+			mabd->maxVolume = p.maxVolume;
+			mabd->type = p.type;
+			//drow
+			rect(1, 4, 18, 11, '+');//empty motherboard
+			rect(3, 5, 5, 6, 'X');//no cpu
+			rect(2, 10, 10, 10, '\\');//no vga
+			for (int i = 0; i < 4; i++) {//no RAM
+				rect(7 + i * 2, 5, 7 + i * 2, 8, '|');
+			}
+			for (int i = 0; i < 4; i++) {//no SATA
+				rect(21, 2 + i * 3, 28, 3 + i * 3, '0');
+			}
+			break;//for vPow
+		}
+
+	}
+	f.close();
+}
 void Box::list() {
 	cout << "Box:\n";
 	if (power) cout << *power;
-	if (mb) mb->list();
+	if (mabd) mabd->list();
 }
 
 //Power
@@ -254,6 +302,13 @@ void Power::newPower() {
 
 }
 //MotherBoard
+ostream& operator<<(ostream& out, const MotherBoard& mb) {
+	out << mb.name << ' ' << mb.soket << ' ' << mb.maxCountRAMUnits << ' '
+		<< mb.maxCountSATAunits << ' ' << mb.minFreq << ' '
+		<< mb.maxFreq << ' ' << mb.maxVolume << ' ' << mb.type
+		<< endl;
+	return out;
+}
 MotherBoard::MotherBoard() {
 	//cout << "new MotherBoard\n";
 }

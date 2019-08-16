@@ -68,6 +68,7 @@ public:
 	void list();
 	static void newMotherBoard();
 	MotherBoard();
+	friend ostream& operator<<(ostream&, const MotherBoard&);
 };
 class Drive : public SATA {//HDD, SSD
 	int volume;
@@ -81,7 +82,7 @@ class ROM : public SATA {//CD\DVD\BD ROM\RW
 class Box{
 public:
 	Power* power;
-	MotherBoard* mb;
+	MotherBoard* mabd;
 	char maket[13][30];
 public:
 	virtual ~Box();
