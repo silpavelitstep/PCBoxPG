@@ -46,12 +46,17 @@ public:
 	static void newGPU();
 };
 class RAM :public Unit {
-public:
+public://data
 	int minFreq;//800 - 800MHz
 	int maxFreq;//
 	int memVolume;//16 - 16GB
 	char type;//'3' - ddr3
+public://methods
+	static void newRAM();
+public://staff
 	virtual ~RAM();
+	RAM();
+	RAM(const RAM&);
 	friend ostream& operator<<(ostream&, const RAM&);
 };
 class SATA :public Unit {
@@ -80,6 +85,7 @@ public://methods
 	void list();
 	void addCPU(Box*);
 	void addGPU(Box*);
+	void addRAM(Box*);
 	static void newMotherBoard();
 public://staff
 	virtual ~MotherBoard();

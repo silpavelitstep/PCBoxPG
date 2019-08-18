@@ -48,7 +48,7 @@ void Box::newUnit() {
 	case 'm':MotherBoard::newMotherBoard(); break;
 	case 'g':GPU::newGPU(); break;
 	case 'c':CPU::newCPU(); break;
-	case 'r':break;
+	case 'r':RAM::newRAM(); break;
 	case 's':break;
 	}
 }
@@ -146,7 +146,7 @@ void Box::addUnitToMaket() {
 	if (mabd) switch (select){
 	case 'g':mabd->addGPU(this); break;
 	case 'c':mabd->addCPU(this); break;
-	case 'r':break;
+	case 'r':mabd->addRAM(this); break;
 	case 's':break;
 	}
 }
@@ -191,7 +191,12 @@ void Box::delUnitFromMaket() {
 		mabd->cpu = 0;
 		rect(3, 5, 5, 6, 'X');
 		break;
-	case 'r':break;
+	case 'r':
+		if (mabd->curRamUnit) {
+			delete mabd->ram[--(mabd->curRamUnit)];
+			rect(7 + mabd->curRamUnit * 2, 5, 7 + mabd->curRamUnit * 2, 8, '+');
+		}
+		break;
 	case 's':break;
 	}
 }
@@ -249,10 +254,10 @@ void Box::addMotherBoard() {
 			rect(1, 4, 18, 11, '+');//empty motherboard
 			rect(3, 5, 5, 6, 'X');//no cpu
 			rect(2, 10, 10, 10, '\\');//no vga
-			for (int i = 0; i < 4; i++) {//no RAM
+			for (int i = 0; i < mabd->maxCountRAMUnits; i++) {//no RAM
 				rect(7 + i * 2, 5, 7 + i * 2, 8, '|');
 			}
-			for (int i = 0; i < 4; i++) {//no SATA
+			for (int i = 0; i < mabd->maxCountSATAunits; i++) {//no SATA
 				rect(21, 2 + i * 3, 28, 3 + i * 3, '0');
 			}
 			break;//for vPow
@@ -280,7 +285,7 @@ Power::Power() {
 	name = 0;
 }
 Power::~Power() {
-	/*cout << "free Power\n";*/
+	cout << "free Power\n";
 	
 }
 ostream& operator<<(ostream& out, const Power& pwr) {
@@ -350,14 +355,15 @@ MotherBoard::MotherBoard(const MotherBoard& obj) {
 	
 }
 MotherBoard::~MotherBoard() {
-	//cout << "free MotherBoard\n";
+	cout << "free MotherBoard\n";
 	delete cpu;
 	if (soket) delete[] soket;
 	delete gpu;
-	/*
 	int i;
-	for (i = 0; i < 4; i++)
-		if (ram[i]) delete ram[i];
+	for (i = 0; i < curRamUnit; i++)
+		delete ram[i];
+	
+	/*
 	for (i = 0; i < 4; i++)
 		if (sata[i]) delete sata[i];
 	*/
@@ -522,9 +528,71 @@ void MotherBoard::addGPU(Box* box) {
 	}
 	f.close();
 }
+void MotherBoard::addRAM(Box* box) {
+	if (curRamUnit == maxCountRAMUnits) {
+		cout << "RAM slots is full, can del last RAM unit? 'y' or anykay for exit:\n";
+		char select;
+		cin >> select;
+		if (select == 'y') delete ram[--curRamUnit];
+		else return;
+		char c[10];
+		cin.getline(c, 10);
+	}
+	system("CLS");
+	ifstream f("ram.txt");
+	char bf;
+	RAM ramt;
+	ramt.name = new char[256];
+	vector<RAM> vPow;
+	//load from file to vector
+	while (f) {
+		f >> bf;//#
+		f.getline(ramt.name, 255, '^');
+		f >> ramt.minFreq;
+		f >> ramt.maxFreq;
+		f >> ramt.memVolume;
+		f >> ramt.type;
+		if (strcmp(ramt.name, "") != 0) {
+			vPow.push_back(ramt);
+			cout << ramt << endl;
+		}
+	}
+	//select name
+	cout << "check name:";
+	cin.getline(ramt.name, 255);
+	for (RAM p : vPow) {
+		//find
+		if (strcmp(p.name, ramt.name) == 0) {
+			//check fisical key
+			if (type != p.type) {
+				cout << "Incorrect type!\n";
+				break;
+			}
+			//
+			
+			ram[curRamUnit] = new RAM();
+			//copy
+			ram[curRamUnit]->name = new char[strlen(p.name) + 1];
+			strcpy(ram[curRamUnit]->name, p.name);
+			ram[curRamUnit]->minFreq = p.minFreq;
+			ram[curRamUnit]->maxFreq = p.maxFreq;
+			ram[curRamUnit]->memVolume = p.memVolume;
+			ram[curRamUnit]->type = p.type;
+			//drow
+			box->rect(7 + curRamUnit * 2, 5, 7 + curRamUnit * 2, 8, 'v');
+			
+			//end 
+			curRamUnit++;
+			break;//for vPow
+		}
+
+	}
+	f.close();
+}
+
 //CPU
 CPU::~CPU() {
-	//cout << "free CPU\n";
+	cout << "free CPU\n";
 	if (soket) delete[] soket;
 }
 CPU::CPU() {
@@ -558,55 +626,12 @@ CPU& CPU::operator=(const CPU& obj) {
 	type = obj.type;
 	return *this;
 }
-void CPU::newCPU() {
-	CPU cpu;
-	char select;
-	do {
-		//name
-		cout << "Input name: ";
-		char tmp[256];
-		cin.getline(tmp, 255);
-		cpu.name = new char[strlen(tmp) + 1];
-		strcpy(cpu.name, tmp);
-		//soket
-		cout << "Input soket: ";
-		cin.getline(tmp, 255);
-		cpu.soket = new char[strlen(tmp) + 1];
-		strcpy(cpu.soket, tmp);
-		//RAM
-		cout << "Input RAM. Set throw space:\n"
-			<<" min freq, "
-			<< "max freq, max volume,"
-			<< "type (f.e. '3' for DDR3):\n";
-		cin >>  cpu.minFreq>> cpu.maxFreq 
-			>> cpu.maxVolume >> cpu.type;
-		
-		//save or not
-		cout << "save to file?\n"
-			<< "'y' - yes,\n"
-			<< "any char for exit\n"
-			<< "'c' - clear,\n"
-			<< endl;
-		cin >> select;
-		char buf[100];
-		cin.getline(buf, 99);
-		if (select == 'y') {
-			ofstream f("cpu.txt", ios::app);
-			if (f) {
-				f << '#' << cpu.name << '^' << cpu.soket << '^'
-					<< cpu.minFreq << ' ' << cpu.maxFreq << ' '
-					<< cpu.maxVolume << ' '<< cpu.type << endl;
-			}
-			f.close();
-			break;
-		}
-		else if (select == 'c')
-			continue;
-		break;
-	} while (true);
-}
+void CPU::newCPU() {}
+
 //GPU
-GPU::~GPU() {/*cout << "free GPU\n";*/ }
+GPU::~GPU() {
+	cout << "free GPU\n";
+}
 GPU::GPU() {
 	name = 0;
 }
@@ -617,7 +642,7 @@ GPU::GPU(const GPU& obj) {
 	minPower = obj.minPower;
 }
 ostream& operator<<(ostream& out, const GPU& gpu) {
-	out << gpu.name << ' ' << gpu.memoryVolume<<"GB";
+	out << gpu.name << ' ' << gpu.memoryVolume<<"GB "<<gpu.minPower<<" Watt";
 	return out;
 }
 void GPU::newGPU() {
@@ -658,8 +683,63 @@ void GPU::newGPU() {
 		break;
 	} while (true);
 }
+
 //RAM
-RAM::~RAM() { cout << "free GPU\n"; }
+RAM::~RAM() {
+	cout << "free GPU\n";
+}
+RAM::RAM() {
+	name = 0;
+}
+RAM::RAM(const RAM& obj) {
+	name = new char[strlen(obj.name)+1];
+	strcpy(name,obj.name);
+	minFreq = obj.minFreq;
+	maxFreq = obj.maxFreq;
+	memVolume = obj.memVolume;
+	type = obj.type;
+}
+void RAM::newRAM() {
+	RAM ram;
+	char select;
+	do {
+		//name
+		cout << "Input name: ";
+		char tmp[256];
+		cin.getline(tmp, 255);
+		ram.name = new char[strlen(tmp) + 1];
+		strcpy(ram.name, tmp);
+		//RAM
+		cout << "Input RAM. Set throw space:\n"
+			<< " min freq, "
+			<< "max freq, volume,"
+			<< "type (f.e. '3' for DDR3):\n";
+		cin >> ram.minFreq >> ram.maxFreq
+			>> ram.memVolume >> ram.type;
+		//save or not
+		cout << "save to file?\n"
+			<< "'y' - yes,\n"
+			<< "any char for exit\n"
+			<< "'c' - clear,\n"
+			<< endl;
+		cin >> select;
+		char buf[100];
+		cin.getline(buf, 99);
+		if (select == 'y') {
+			ofstream f("ram.txt", ios::app);
+			if (f) {
+				f << '#' << ram.name << '^' 
+					<< ram.minFreq << ' ' << ram.maxFreq << ' '
+					<< ram.memVolume << ' ' << ram.type << endl;
+			}
+			f.close();
+			break;
+		}
+		else if (select == 'c')
+			continue;
+		break;
+	} while (true);
+}
 ostream& operator<<(ostream& out, const RAM& ram) {
 	out << ram.name << ' ' << ram.minFreq << ' ' << ram.maxFreq << ' '
 		<< ram.memVolume << "GB DDR" << ram.type;
