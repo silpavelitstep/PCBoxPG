@@ -38,7 +38,10 @@ public:
 class GPU :public Unit {
 public:
 	virtual ~GPU();
+	GPU();
+	GPU(const GPU&);
 	int memoryVolume;
+	int minPower;
 	friend ostream& operator<<(ostream&, const GPU&);
 	static void newGPU();
 };
@@ -76,6 +79,7 @@ public:
 public://methods
 	void list();
 	void addCPU(Box*);
+	void addGPU(Box*);
 	static void newMotherBoard();
 public://staff
 	virtual ~MotherBoard();

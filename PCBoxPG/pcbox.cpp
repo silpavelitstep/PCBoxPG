@@ -144,7 +144,7 @@ void Box::addUnitToMaket() {
 	case 'm':addMotherBoard(); break;
 	}
 	if (mabd) switch (select){
-	case 'g':break;
+	case 'g':mabd->addGPU(this); break;
 	case 'c':mabd->addCPU(this); break;
 	case 'r':break;
 	case 's':break;
@@ -184,6 +184,7 @@ void Box::delUnitFromMaket() {
 	case 'g':
 		delete mabd->gpu;
 		mabd->gpu = 0;
+		rect(2, 10, 10, 10, '\\');
 		break;
 	case 'c':
 		delete mabd->cpu;
@@ -481,7 +482,46 @@ void MotherBoard::addCPU(Box* box) {
 	}
 	f.close();
 }
+void MotherBoard::addGPU(Box* box) {
+	system("CLS");
+	ifstream f("gpu.txt");
+	char bf;
+	GPU gtmp;
+	gtmp.name = new char[256];
+	vector<GPU> vPow;
+	//load from file to vector
+	while (f) {
+		f >> bf;//#
+		f.getline(gtmp.name, 255, '^');
+		f >> gtmp.memoryVolume >> gtmp.minPower;
+		if (strcmp(gtmp.name, "") != 0) {
+			vPow.push_back(gtmp);
+			cout << gtmp << endl;
+		}
+	}
+	//select name
+	cout << "check name:";
+	cin.getline(gtmp.name, 255);
+	for (GPU p : vPow) {
+		//find
+		if (strcmp(p.name, gtmp.name) == 0) {
+			if (gpu == 0)
+				gpu = new GPU();
+			//copy
+			if (gpu->name) delete[] gpu->name;
+			gpu->name = new char[strlen(p.name) + 1];
+			strcpy(gpu->name, p.name);
+			gpu->memoryVolume = p.memoryVolume;
+			gpu->minPower = p.minPower;
+			//drow
+			box->rect(2, 10, 10, 10, '1');
+			//end 
+			break;//for vPow
+		}
 
+	}
+	f.close();
+}
 //CPU
 CPU::~CPU() {
 	//cout << "free CPU\n";
@@ -566,10 +606,57 @@ void CPU::newCPU() {
 	} while (true);
 }
 //GPU
-GPU::~GPU() { cout << "free GPU\n"; }
+GPU::~GPU() {/*cout << "free GPU\n";*/ }
+GPU::GPU() {
+	name = 0;
+}
+GPU::GPU(const GPU& obj) {
+	name = new char[strlen(obj.name)+1];
+	strcpy(name,obj.name);
+	memoryVolume = obj.memoryVolume;
+	minPower = obj.minPower;
+}
 ostream& operator<<(ostream& out, const GPU& gpu) {
 	out << gpu.name << ' ' << gpu.memoryVolume<<"GB";
 	return out;
+}
+void GPU::newGPU() {
+	GPU gpu;
+	char select;
+	do {
+		//name
+		cout << "Input name: ";
+		char tmp[256];
+		cin.getline(tmp, 255);
+		gpu.name = new char[strlen(tmp) + 1];
+		strcpy(gpu.name, tmp);
+		//RAM and power
+		cout << "Input RAM volume: ";
+		cin >> gpu.memoryVolume;
+		cout << "Input min power of Power: ";
+		cin >> gpu.minPower;
+		//save or not
+		cout << "save to file?\n"
+			<< "'y' - yes,\n"
+			<< "any char for exit\n"
+			<< "'c' - clear,\n"
+			<< endl;
+		cin >> select;
+		char buf[100];
+		cin.getline(buf, 99);
+		if (select == 'y') {
+			ofstream f("gpu.txt", ios::app);
+			if (f) {
+				f << '#' << gpu.name << '^'
+				<<gpu.memoryVolume<<' '<<gpu.minPower << endl;
+			}
+			f.close();
+			break;
+		}
+		else if (select == 'c')
+			continue;
+		break;
+	} while (true);
 }
 //RAM
 RAM::~RAM() { cout << "free GPU\n"; }
