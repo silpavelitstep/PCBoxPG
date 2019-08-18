@@ -46,8 +46,8 @@ void Box::newUnit() {
 	switch (select) {
 	case 'p':Power::newPower(); break;
 	case 'm':MotherBoard::newMotherBoard(); break;
-	case 'g':break;
-	case 'c':break;
+	case 'g':GPU::newGPU(); break;
+	case 'c':CPU::newCPU(); break;
 	case 'r':break;
 	case 's':break;
 	}
@@ -139,14 +139,13 @@ void Box::addUnitToMaket() {
 	cin >> select;
 	char buf[100];
 	cin.getline(buf, 99);
-	
 	switch (select) {
-	case 'p':Box::addPower(); break;
-	case 'm':Box::addMotherBoard(); break;
+	case 'p':addPower(); break;
+	case 'm':addMotherBoard(); break;
 	}
 	if (mabd) switch (select){
 	case 'g':break;
-	case 'c':break;
+	case 'c':mabd->addCPU(this); break;
 	case 'r':break;
 	case 's':break;
 	}
@@ -182,8 +181,15 @@ void Box::delUnitFromMaket() {
 		break;
 	}
 	if (mabd) switch (select) {
-	case 'g':break;
-	case 'c':break;
+	case 'g':
+		delete mabd->gpu;
+		mabd->gpu = 0;
+		break;
+	case 'c':
+		delete mabd->cpu;
+		mabd->cpu = 0;
+		rect(3, 5, 5, 6, 'X');
+		break;
 	case 'r':break;
 	case 's':break;
 	}
@@ -332,6 +338,8 @@ MotherBoard::MotherBoard(const MotherBoard& obj) {
 	strcpy(this->name, obj.name);
 	this->soket = new char[strlen(obj.soket) + 1];
 	strcpy(this->soket, obj.soket);
+	cpu = 0;
+	gpu = 0;
 	maxCountRAMUnits = obj.maxCountRAMUnits;
 	maxCountSATAunits = obj.maxCountSATAunits;
 	minFreq = obj.minFreq;
@@ -341,7 +349,18 @@ MotherBoard::MotherBoard(const MotherBoard& obj) {
 	
 }
 MotherBoard::~MotherBoard() {
-	cout << "free MotherBoard\n";
+	//cout << "free MotherBoard\n";
+	delete cpu;
+	if (soket) delete[] soket;
+	delete gpu;
+	/*
+	int i;
+	for (i = 0; i < 4; i++)
+		if (ram[i]) delete ram[i];
+	for (i = 0; i < 4; i++)
+		if (sata[i]) delete sata[i];
+	*/
+
 }
 void MotherBoard::newMotherBoard() {
 	MotherBoard mb;
@@ -397,8 +416,8 @@ void MotherBoard::newMotherBoard() {
 }
 void MotherBoard::list() {
 	cout << "MotherBoard: " << *this << endl;
-	if (this->cpu) cout << "CPU: " << cpu << endl;;
-	if (this->gpu) cout<<"GPU: "<<gpu<<endl;
+	if (this->cpu) cout << "CPU: " << *cpu << endl;;
+	if (this->gpu) cout<<"GPU: "<<*gpu<<endl;
 	int i;
 	for (i = 0; i < curRamUnit; i++)
 		cout << (*ram[i]) << endl;
@@ -407,13 +426,144 @@ void MotherBoard::list() {
 		cout << (*sata[i]) << endl;
 		*/
 }
+void MotherBoard::addCPU(Box* box) {
+	system("CLS");
+	ifstream f("cpu.txt");
+	char bf;
+	CPU cput;
+	cput.name = new char[256];
+	cput.soket = new char[256];
+	vector<CPU> vPow;
+	//load from file to vector
+	while (f) {
+		f >> bf;//#
+		f.getline(cput.name, 255, '^');
+		f.getline(cput.soket, 255, '^');
+		f >> cput.minFreq;
+		f >> cput.maxFreq;
+		f >> cput.maxVolume;
+		f >> cput.type;
+		if (strcmp(cput.name, "") != 0) {
+			vPow.push_back(cput);
+			cout << cput << endl;
+		}
+	}
+	//select name
+	cout << "check name:";
+	cin.getline(cput.name, 255);
+	for (CPU p : vPow) {
+		//find
+		if (strcmp(p.name, cput.name) == 0) {
+			if (cpu == 0)
+				cpu = new CPU();
+			//check soket (fisical key)
+			if (strcmp(this->soket, p.soket) != 0) {
+				cout << "Incorrect soket!\n";
+				break;
+			}
+			//copy
+			if (cpu->name) delete[] cpu->name;
+			cpu->name = new char[strlen(p.name) + 1];
+			strcpy(cpu->name, p.name);
+			if (cpu->soket) delete[] cpu->soket;
+			cpu->soket = new char[strlen(p.soket) + 1];
+			strcpy(cpu->soket, p.soket);
+			cpu->minFreq = p.minFreq;
+			cpu->maxFreq = p.maxFreq;
+			cpu->maxVolume = p.maxVolume;
+			cpu->type = p.type;
+			//drow
+			box->rect(3, 5, 5, 6, '1');
+			//end 
+			break;//for vPow
+		}
+
+	}
+	f.close();
+}
 
 //CPU
-CPU::~CPU() { cout << "free CPU\n"; }
+CPU::~CPU() {
+	//cout << "free CPU\n";
+	if (soket) delete[] soket;
+}
+CPU::CPU() {
+	name = 0;
+	soket = 0;
+}
+CPU::CPU(const CPU& obj) {
+	name = new char[strlen(obj.name) + 1];
+	strcpy(name, obj.name);
+	soket = new char[strlen(obj.soket) + 1];
+	strcpy(soket, obj.soket);
+	minFreq = obj.minFreq;
+	maxFreq = obj.maxFreq;
+	maxVolume = obj.maxVolume;
+	type = obj.type;
+
+}
 ostream& operator<<(ostream& out, const CPU& cpu) {
 	out << cpu.name << ' ' << cpu.soket << ' ' << cpu.minFreq << ' '
 		<< cpu.maxFreq << ' ' << cpu.maxVolume << "GB DDR" << cpu.type;
 	return out;
+}
+CPU& CPU::operator=(const CPU& obj) {
+	name = new char[strlen(obj.name) + 1];
+	strcpy(name, obj.name);
+	soket = new char[strlen(obj.soket) + 1];
+	strcpy(soket, obj.soket);
+	minFreq = obj.minFreq;
+	maxFreq = obj.maxFreq;
+	maxVolume = obj.maxVolume;
+	type = obj.type;
+	return *this;
+}
+void CPU::newCPU() {
+	CPU cpu;
+	char select;
+	do {
+		//name
+		cout << "Input name: ";
+		char tmp[256];
+		cin.getline(tmp, 255);
+		cpu.name = new char[strlen(tmp) + 1];
+		strcpy(cpu.name, tmp);
+		//soket
+		cout << "Input soket: ";
+		cin.getline(tmp, 255);
+		cpu.soket = new char[strlen(tmp) + 1];
+		strcpy(cpu.soket, tmp);
+		//RAM
+		cout << "Input RAM. Set throw space:\n"
+			<<" min freq, "
+			<< "max freq, max volume,"
+			<< "type (f.e. '3' for DDR3):\n";
+		cin >>  cpu.minFreq>> cpu.maxFreq 
+			>> cpu.maxVolume >> cpu.type;
+		
+		//save or not
+		cout << "save to file?\n"
+			<< "'y' - yes,\n"
+			<< "any char for exit\n"
+			<< "'c' - clear,\n"
+			<< endl;
+		cin >> select;
+		char buf[100];
+		cin.getline(buf, 99);
+		if (select == 'y') {
+			ofstream f("cpu.txt", ios::app);
+			if (f) {
+				f << '#' << cpu.name << '^' << cpu.soket << '^'
+					<< cpu.minFreq << ' ' << cpu.maxFreq << ' '
+					<< cpu.maxVolume << ' '<< cpu.type << endl;
+			}
+			f.close();
+			break;
+		}
+		else if (select == 'c')
+			continue;
+		break;
+	} while (true);
 }
 //GPU
 GPU::~GPU() { cout << "free GPU\n"; }

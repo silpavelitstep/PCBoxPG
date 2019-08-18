@@ -22,7 +22,9 @@ public:
 class CPU :public Unit {
 public:
 	virtual ~CPU();
-	string soket;
+	CPU();
+	CPU(const CPU&);
+	char* soket;
 	//RAM support
 	int minFreq;//800 - 800MHz
 	int maxFreq;//
@@ -30,12 +32,15 @@ public:
 	char type;//'3' - ddr3
 	//
 	friend ostream& operator<<(ostream&, const CPU&);
+	CPU& operator=(const CPU&);
+	static void newCPU();
 };
 class GPU :public Unit {
 public:
 	virtual ~GPU();
 	int memoryVolume;
 	friend ostream& operator<<(ostream&, const GPU&);
+	static void newGPU();
 };
 class RAM :public Unit {
 public:
@@ -51,9 +56,9 @@ public:
 	virtual ~SATA() = 0;//abstract unit
 	char typeSata;// '2' - sata2
 };
+	class Box;
 class MotherBoard :public Unit {
 public:
-	virtual ~MotherBoard();
 	CPU* cpu;
 	char* soket;//------f
 	GPU* gpu;
@@ -68,9 +73,12 @@ public:
 	int maxFreq;//
 	int maxVolume;//16 - 16GB
 	char type;//'3' - ddr3
-public:
+public://methods
 	void list();
+	void addCPU(Box*);
 	static void newMotherBoard();
+public://staff
+	virtual ~MotherBoard();
 	MotherBoard();
 	MotherBoard(const MotherBoard&);
 	friend ostream& operator<<(ostream&, const MotherBoard&);
@@ -85,6 +93,7 @@ class ROM : public SATA {//CD\DVD\BD ROM\RW
 	virtual ~ROM();
 };
 class Box{
+	friend class MotherBoard;//for box->rect in MotherBoard::addCPU()
 public:
 	Power* power;
 	MotherBoard* mabd;
