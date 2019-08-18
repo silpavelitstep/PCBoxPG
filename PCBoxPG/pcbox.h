@@ -59,10 +59,16 @@ public://staff
 	RAM(const RAM&);
 	friend ostream& operator<<(ostream&, const RAM&);
 };
-class SATA :public Unit {
+class SATA{
 public:
 	virtual ~SATA() = 0;//abstract unit
-	char typeSata;// '2' - sata2
+	char typeSataUnit;// s - ssd, h - hdd, r - rom
+	string additionInfo;//f.e. ssd or vendor
+	string name;
+	virtual void inpt();
+	virtual void wrt(ofstream f)=0;
+
+	
 };
 	class Box;
 class MotherBoard :public Unit {
@@ -94,13 +100,20 @@ public://staff
 	friend ostream& operator<<(ostream&, const MotherBoard&);
 };
 class Drive : public SATA {//HDD, SSD
+public:
 	int volume;
-	char typeDrive;//'h' - hdd, 's' - ssd
 	virtual ~Drive();
+	static void newDrive(char);
+	void inpt() override;
+	void wrt(ofstream f) override;
 };
 class ROM : public SATA {//CD\DVD\BD ROM\RW
+public:
 	char typeDisk;//'c' -cd, 'd' - dvd+cd, 'b' - BlueRay+dvd+cd
 	virtual ~ROM();
+	static void newROM(char);
+	void inpt() override;
+	void wrt(ofstream f) override;
 };
 class Box{
 	friend class MotherBoard;//for box->rect in MotherBoard::addCPU()

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 #pragma warning(disable:4996)
 using namespace std;
 //Unit
@@ -49,7 +50,22 @@ void Box::newUnit() {
 	case 'g':GPU::newGPU(); break;
 	case 'c':CPU::newCPU(); break;
 	case 'r':RAM::newRAM(); break;
-	case 's':break;
+	case 's':
+		cout << "select type SATA unit:\n"
+			<< "'s' - SSD,\n"
+			<< "'h' - HDD,\n"
+			<< "'r' - ROM CD_DVD,\n"
+			<< "any other key for exit:\n";
+		cin >> select;
+		char buf[100];
+		cin.getline(buf, 99);
+		switch (select){
+		case 's':
+		case 'h':Drive::newDrive(select); break;
+		case 'r':ROM::newROM(select); break;
+		}
+
+		break;
 	}
 }
 void Box::menu() {
@@ -626,7 +642,53 @@ CPU& CPU::operator=(const CPU& obj) {
 	type = obj.type;
 	return *this;
 }
-void CPU::newCPU() {}
+void CPU::newCPU() {
+	CPU cpu;
+	char select;
+	do {
+		//name
+		cout << "Input name: ";
+		char tmp[256];
+		cin.getline(tmp, 255);
+		cpu.name = new char[strlen(tmp) + 1];
+		strcpy(cpu.name, tmp);
+		//soket
+		cout << "Input soket: ";
+		cin.getline(tmp, 255);
+		cpu.soket = new char[strlen(tmp) + 1];
+		strcpy(cpu.soket, tmp);
+		//RAM
+		cout << "Input RAM. Set throw space:\n"
+			<< " min freq, "
+			<< "max freq, max volume,"
+			<< "type (f.e. '3' for DDR3):\n";
+		cin >> cpu.minFreq >> cpu.maxFreq
+			>> cpu.maxVolume >> cpu.type;
+
+		//save or not
+		cout << "save to file?\n"
+			<< "'y' - yes,\n"
+			<< "any char for exit\n"
+			<< "'c' - clear,\n"
+			<< endl;
+		cin >> select;
+		char buf[100];
+		cin.getline(buf, 99);
+		if (select == 'y') {
+			ofstream f("cpu.txt", ios::app);
+			if (f) {
+				f << '#' << cpu.name << '^' << cpu.soket << '^'
+					<< cpu.minFreq << ' ' << cpu.maxFreq << ' '
+					<< cpu.maxVolume << ' ' << cpu.type << endl;
+			}
+			f.close();
+			break;
+		}
+		else if (select == 'c')
+			continue;
+		break;
+	} while (true);
+}
 
 //GPU
 GPU::~GPU() {
@@ -747,9 +809,68 @@ ostream& operator<<(ostream& out, const RAM& ram) {
 }
 //SATA
 SATA::~SATA() { cout << "free SATA\n"; }
+void SATA::inpt() {
+	char select;
+	do {
+		typeSataUnit = select;
+		//name
+		cout << "Input name: ";
+		getline(cin, name);
+		//addition info
+		cout << "Input addition info: ";
+		getline(cin, additionInfo);
+		//for children class
+		this->inpt();
+		//save or not
+		cout << "save to file?\n"
+			<< "'y' - yes,\n"
+			<< "any char for exit\n"
+			<< "'c' - clear,\n"
+			<< endl;
+		cin >> select;
+		char buf[100];
+		cin.getline(buf, 99);
+		if (select == 'y') {
+			ofstream f("sata.txt", ios::app || ios::binary);
+			if (f) {
+				f.write((const char*)typeSataUnit, 1);//sata type
+				f.write(name.c_str(), name.length());//name
+				f.write(additionInfo.c_str(), additionInfo.length());
+				//save for children class
+				this->wrt(f);
+			}
+			f.close();
+			break;
+		}
+		else if (select == 'c')
+			continue;
+		break;
+	} while (true);
+}
+
 //DRIVE
 Drive::~Drive() { cout << "free Drive\n"; }
+void Drive::newDrive(char tp) {
+	Drive *drv=new Drive();
+	((SATA*)drv)->inpt();
+	
+}
+void Drive::inpt() {
+	cout << "Input volume: ";
+	cin >> volume;
+	char buf[100];
+	cin.getline(buf, 99);
+}
+void Drive::wrt(ofstream f) {
+
+}
 //ROM
 ROM::~ROM() { cout << "free ROM"; }
+void ROM::newROM(char tp) {
+	ROM* rom = new ROM();
+	((SATA*)rom)->inpt();
+}
+void ROM::inpt() {}
+void ROM::wrt(ofstream f) {}
 
 
