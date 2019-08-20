@@ -61,8 +61,8 @@ void Box::newUnit() {
 		cin.getline(buf, 99);
 		switch (select){
 		case 's':
-		case 'h':Drive::newDrive(select); break;
-		case 'r':ROM::newROM(select); break;
+		case 'h':Drive::newDrive('h'); break;
+		case 'r':ROM::newROM('r'); break;
 		}
 
 		break;
@@ -444,10 +444,10 @@ void MotherBoard::list() {
 	int i;
 	for (i = 0; i < curRamUnit; i++)
 		cout << (*ram[i]) << endl;
-	/*
+	
 	for (i = 0; i < curSATAUnit; i++)
 		cout << (*sata[i]) << endl;
-		*/
+		
 }
 void MotherBoard::addCPU(Box* box) {
 	system("CLS");
@@ -628,28 +628,31 @@ void MotherBoard::addSATA(Box* box) {
 		f.read(&kind, 1);
 		switch (kind) {
 		case 's':
-		case 'h':tmpSATA = new Drive(); cout << "HHH\n"; break;
+		case 'h':tmpSATA = new Drive(); break;
 		case 'r':tmpSATA = new ROM(); break;
 		default:
 			tmpSATA = 0;
 		}
-		if (tmpSATA) {
+		if (tmpSATA && f) {
 			tmpSATA->typeSataUnit = kind;
 			//read size of name and name
 			f.read((char*)&lenght, sizeof(int));
 			f.read(tmpString, lenght);
+			tmpString[lenght] = '\0';
 			tmpSATA->name = tmpString;
 			//read size of addition info and addition info
 			f.read((char*)& lenght, sizeof(int));
 			f.read(tmpString, lenght);
+			tmpString[lenght] = '\0';
 			tmpSATA->additionInfo = tmpString;
 			//read other data, for specific class
-			tmpSATA->rd(f);
+			//tmpSATA->rd(f);---------------------///============
 			//load to vector
 			vPow.push_back(tmpSATA);
 			cout << *tmpSATA << endl;
 		}
 	}
+	
 	//select name
 	string selectName;
 	cout << "check name:";
@@ -902,18 +905,18 @@ void SATA::maininput(){
 		if (select == 'y') {
 			ofstream f("sata.txt", ios::app | ios::binary);
 			if (f) {
-				//sata type
-				f.write((const char*)&typeSataUnit, 1);
+				//sata type (char)
+				f.write(&typeSataUnit, 1);
 				//name
 				lenght = name.length();
-				f.write((const char*)&lenght, sizeof(lenght));
+				f.write((char*)& lenght, sizeof(lenght));
 				f.write(name.c_str(), lenght);
 				//addition info
 				lenght = additionInfo.length();
-				f.write((const char*)& lenght, sizeof(lenght));
+				f.write((char*)& lenght, sizeof(lenght));
 				f.write(additionInfo.c_str(), lenght);
 				//save for children class
-				this->wrt(f);
+				//this->wrt(f);//----------------------===========
 			}
 			f.close();
 			break;
@@ -924,7 +927,7 @@ void SATA::maininput(){
 	} while (true);
 }
 ostream& operator<<(ostream& out, const SATA& obj) {
-	out << obj.name << ' ' << obj.additionInfo << obj.print();
+	out << obj.name << ' ' << obj.additionInfo;// << obj.print();
 	return out;
 }
 
@@ -932,9 +935,8 @@ ostream& operator<<(ostream& out, const SATA& obj) {
 Drive::~Drive() { cout << "free Drive\n"; }
 void Drive::newDrive(char tp) {
 	Drive *drv=new Drive();
-	
-	drv->maininput();
 	drv->typeSataUnit = tp;
+	drv->maininput();
 	delete drv;
 	
 }
@@ -958,8 +960,8 @@ string Drive::print() const {
 ROM::~ROM() { cout << "free ROM"; }
 void ROM::newROM(char tp) {
 	ROM* rom = new ROM();
-	((SATA*)rom)->inpt();
 	rom->typeSataUnit = tp;
+	rom->maininput();
 	delete rom;
 }
 void ROM::inpt() {
