@@ -163,7 +163,7 @@ void Box::addUnitToMaket() {
 	case 'g':mabd->addGPU(this); break;
 	case 'c':mabd->addCPU(this); break;
 	case 'r':mabd->addRAM(this); break;
-	case 's':break;
+	case 's':mabd->addSATA(this); break;
 	}
 }
 void Box::delUnitFromMaket() {
@@ -545,11 +545,11 @@ void MotherBoard::addGPU(Box* box) {
 	f.close();
 }
 void MotherBoard::addRAM(Box* box) {
-	if (curRamUnit == maxCountRAMUnits) {
-		cout << "RAM slots is full, can del last RAM unit? 'y' or anykay for exit:\n";
+	if (curSATAUnit == maxCountSATAunits) {
+		cout << "RAM slots is full, can del last RAM unit? 'y' or anykey for exit:\n";
 		char select;
 		cin >> select;
-		if (select == 'y') delete ram[--curRamUnit];
+		if (select == 'y') delete sata[--curSATAUnit];
 		else return;
 		char c[10];
 		cin.getline(c, 10);
@@ -603,6 +603,75 @@ void MotherBoard::addRAM(Box* box) {
 		}
 
 	}
+	f.close();
+}
+void MotherBoard::addSATA(Box* box) {
+	if (curRamUnit == maxCountRAMUnits) {
+		cout << "RAM slots is full, can del last RAM unit? 'y' or anykay for exit:\n";
+		char select;
+		cin >> select;
+		if (select == 'y') delete sata[--curRamUnit];
+		else return;
+		char c[100];
+		cin.getline(c, 100);
+	}
+	system("CLS");
+	ifstream f("sata.txt",ios::binary);
+	vector<SATA*> vPow;
+	SATA* tmpSATA;
+	//load from file to vector
+	char kind;
+	int lenght;
+	char tmpString[500];
+	while (f) {
+		//read type SATA unit
+		f.read(&kind, 1);
+		switch (kind) {
+		case 's':
+		case 'h':tmpSATA = new Drive(); cout << "HHH\n"; break;
+		case 'r':tmpSATA = new ROM(); break;
+		default:
+			tmpSATA = 0;
+		}
+		if (tmpSATA) {
+			tmpSATA->typeSataUnit = kind;
+			//read size of name and name
+			f.read((char*)&lenght, sizeof(int));
+			f.read(tmpString, lenght);
+			tmpSATA->name = tmpString;
+			//read size of addition info and addition info
+			f.read((char*)& lenght, sizeof(int));
+			f.read(tmpString, lenght);
+			tmpSATA->additionInfo = tmpString;
+			//read other data, for specific class
+			tmpSATA->rd(f);
+			//load to vector
+			vPow.push_back(tmpSATA);
+			cout << *tmpSATA << endl;
+		}
+	}
+	//select name
+	string selectName;
+	cout << "check name:";
+	getline(cin,selectName);
+	for (SATA* p : vPow) {
+		//find
+		if (selectName==p->name) {
+			sata[curSATAUnit] = p;
+			p = 0;//del link from vector, last pointer in motherboard
+			//not copy (work with pointer)
+			//drow
+			box->rect(21, 2 + curSATAUnit * 3, 28, 3 + curSATAUnit * 3, '1');
+			
+			//end 
+			curSATAUnit++;
+			break;//for vPow
+		}
+
+	}
+	//free vector (free SATA object)
+	for (SATA* p : vPow)
+		if (p) delete p;
 	f.close();
 }
 
@@ -809,10 +878,9 @@ ostream& operator<<(ostream& out, const RAM& ram) {
 }
 //SATA
 SATA::~SATA() { cout << "free SATA\n"; }
-void SATA::inpt() {
+void SATA::maininput(){
 	char select;
 	do {
-		typeSataUnit = select;
 		//name
 		cout << "Input name: ";
 		getline(cin, name);
@@ -830,12 +898,20 @@ void SATA::inpt() {
 		cin >> select;
 		char buf[100];
 		cin.getline(buf, 99);
+		int lenght;
 		if (select == 'y') {
-			ofstream f("sata.txt", ios::app || ios::binary);
+			ofstream f("sata.txt", ios::app | ios::binary);
 			if (f) {
-				f.write((const char*)typeSataUnit, 1);//sata type
-				f.write(name.c_str(), name.length());//name
-				f.write(additionInfo.c_str(), additionInfo.length());
+				//sata type
+				f.write((const char*)&typeSataUnit, 1);
+				//name
+				lenght = name.length();
+				f.write((const char*)&lenght, sizeof(lenght));
+				f.write(name.c_str(), lenght);
+				//addition info
+				lenght = additionInfo.length();
+				f.write((const char*)& lenght, sizeof(lenght));
+				f.write(additionInfo.c_str(), lenght);
 				//save for children class
 				this->wrt(f);
 			}
@@ -847,30 +923,68 @@ void SATA::inpt() {
 		break;
 	} while (true);
 }
+ostream& operator<<(ostream& out, const SATA& obj) {
+	out << obj.name << ' ' << obj.additionInfo << obj.print();
+	return out;
+}
 
 //DRIVE
 Drive::~Drive() { cout << "free Drive\n"; }
 void Drive::newDrive(char tp) {
 	Drive *drv=new Drive();
-	((SATA*)drv)->inpt();
+	
+	drv->maininput();
+	drv->typeSataUnit = tp;
+	delete drv;
 	
 }
 void Drive::inpt() {
-	cout << "Input volume: ";
+	cout << "Input volume(GB): ";
 	cin >> volume;
 	char buf[100];
 	cin.getline(buf, 99);
 }
-void Drive::wrt(ofstream f) {
-
+void Drive::wrt(ofstream& f) {
+	f.write((const char*)&volume, sizeof(int));
 }
+void Drive::rd(ifstream& f) {
+	f.read((char*)&volume, sizeof(int));
+}
+string Drive::print() const {
+	return volume + " GB";
+}
+
 //ROM
 ROM::~ROM() { cout << "free ROM"; }
 void ROM::newROM(char tp) {
 	ROM* rom = new ROM();
 	((SATA*)rom)->inpt();
+	rom->typeSataUnit = tp;
+	delete rom;
 }
-void ROM::inpt() {}
-void ROM::wrt(ofstream f) {}
+void ROM::inpt() {
+	cout << "Input type disk(c - CD, d - DVD-RW, b - BD): ";
+	cin >> typeDisk;
+	char buf[100];
+	cin.getline(buf, 99);
+}
+void ROM::wrt(ofstream& f) {
+	f.write((const char*)&typeDisk, 1);
+}
+void ROM::rd(ifstream& f) {
+	f.read(&typeDisk, 1);
+}
 
+string ROM::print() const{
+	
+	switch (typeDisk)
+	{
+	case 'c':return " CD";
+	case 'd':return " DVD";
+	case 'b':return " BD";
+	default:
+		return "";
+	}
+	
+}
 

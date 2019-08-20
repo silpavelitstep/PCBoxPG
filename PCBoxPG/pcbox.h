@@ -65,10 +65,12 @@ public:
 	char typeSataUnit;// s - ssd, h - hdd, r - rom
 	string additionInfo;//f.e. ssd or vendor
 	string name;
-	virtual void inpt();
-	virtual void wrt(ofstream f)=0;
-
-	
+	void maininput();
+	virtual void inpt()=0;
+	virtual void wrt(ofstream&)=0;
+	virtual void rd(ifstream&) = 0;
+	virtual string print() const =0;
+	friend ostream& operator<<(ostream&, const SATA&);
 };
 	class Box;
 class MotherBoard :public Unit {
@@ -92,6 +94,7 @@ public://methods
 	void addCPU(Box*);
 	void addGPU(Box*);
 	void addRAM(Box*);
+	void addSATA(Box*);
 	static void newMotherBoard();
 public://staff
 	virtual ~MotherBoard();
@@ -105,7 +108,9 @@ public:
 	virtual ~Drive();
 	static void newDrive(char);
 	void inpt() override;
-	void wrt(ofstream f) override;
+	void wrt(ofstream&) override;
+	void rd(ifstream&) override;
+	string print() const override;
 };
 class ROM : public SATA {//CD\DVD\BD ROM\RW
 public:
@@ -113,7 +118,9 @@ public:
 	virtual ~ROM();
 	static void newROM(char);
 	void inpt() override;
-	void wrt(ofstream f) override;
+	void wrt(ofstream&) override;
+	void rd(ifstream&) override;
+	string print() const override;
 };
 class Box{
 	friend class MotherBoard;//for box->rect in MotherBoard::addCPU()
