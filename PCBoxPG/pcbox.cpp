@@ -210,10 +210,15 @@ void Box::delUnitFromMaket() {
 	case 'r':
 		if (mabd->curRamUnit) {
 			delete mabd->ram[--(mabd->curRamUnit)];
-			rect(7 + mabd->curRamUnit * 2, 5, 7 + mabd->curRamUnit * 2, 8, '+');
+			rect(7 + mabd->curRamUnit * 2, 5, 7 + mabd->curRamUnit * 2, 8, '0');
 		}
 		break;
-	case 's':break;
+	case 's':
+		if (mabd->curSATAUnit) {
+			delete mabd->sata[--(mabd->curSATAUnit)];
+			rect(21, 2 + mabd->curSATAUnit * 3, 28, 3 + mabd->curSATAUnit * 3, '0');
+		}
+		break;
 	}
 }
 void Box::rect(int x1, int y1, int x2, int y2, char c) {
@@ -301,7 +306,7 @@ Power::Power() {
 	name = 0;
 }
 Power::~Power() {
-	cout << "free Power\n";
+	//cout << "free Power\n";
 	
 }
 ostream& operator<<(ostream& out, const Power& pwr) {
@@ -371,19 +376,15 @@ MotherBoard::MotherBoard(const MotherBoard& obj) {
 	
 }
 MotherBoard::~MotherBoard() {
-	cout << "free MotherBoard\n";
+	//cout << "free MotherBoard\n";
 	delete cpu;
 	if (soket) delete[] soket;
 	delete gpu;
 	int i;
 	for (i = 0; i < curRamUnit; i++)
 		delete ram[i];
-	
-	/*
-	for (i = 0; i < 4; i++)
-		if (sata[i]) delete sata[i];
-	*/
-
+	for (i = 0; i < curSATAUnit; i++)
+		delete sata[i];
 }
 void MotherBoard::newMotherBoard() {
 	MotherBoard mb;
@@ -443,10 +444,10 @@ void MotherBoard::list() {
 	if (this->gpu) cout<<"GPU: "<<*gpu<<endl;
 	int i;
 	for (i = 0; i < curRamUnit; i++)
-		cout << (*ram[i]) << endl;
+		cout <<"RAM slot: "<< (*ram[i]) << endl;
 	
 	for (i = 0; i < curSATAUnit; i++)
-		cout << (*sata[i]) << endl;
+		cout <<"SATA port: "<< (*sata[i]) << endl;
 		
 }
 void MotherBoard::addCPU(Box* box) {
@@ -549,7 +550,7 @@ void MotherBoard::addRAM(Box* box) {
 		cout << "RAM slots is full, can del last RAM unit? 'y' or anykey for exit:\n";
 		char select;
 		cin >> select;
-		if (select == 'y') delete sata[--curSATAUnit];
+		if (select == 'y') delete ram[--curRamUnit];
 		else return;
 		char c[10];
 		cin.getline(c, 10);
@@ -595,7 +596,7 @@ void MotherBoard::addRAM(Box* box) {
 			ram[curRamUnit]->memVolume = p.memVolume;
 			ram[curRamUnit]->type = p.type;
 			//drow
-			box->rect(7 + curRamUnit * 2, 5, 7 + curRamUnit * 2, 8, 'v');
+			box->rect(7 + curRamUnit * 2, 5, 7 + curRamUnit * 2, 8, '1');
 			
 			//end 
 			curRamUnit++;
@@ -606,11 +607,11 @@ void MotherBoard::addRAM(Box* box) {
 	f.close();
 }
 void MotherBoard::addSATA(Box* box) {
-	if (curRamUnit == maxCountRAMUnits) {
-		cout << "RAM slots is full, can del last RAM unit? 'y' or anykay for exit:\n";
+	if (curSATAUnit == maxCountSATAunits) {
+		cout << "SATA slots is full, can del last SATA unit? 'y' or anykay for exit:\n";
 		char select;
 		cin >> select;
-		if (select == 'y') delete sata[--curRamUnit];
+		if (select == 'y') delete sata[--curSATAUnit];
 		else return;
 		char c[100];
 		cin.getline(c, 100);
@@ -646,9 +647,17 @@ void MotherBoard::addSATA(Box* box) {
 			tmpString[lenght] = '\0';
 			tmpSATA->additionInfo = tmpString;
 			//read other data, for specific class
-			//tmpSATA->rd(f);---------------------///============
+			tmpSATA->rd(f);
 			//load to vector
 			vPow.push_back(tmpSATA);
+			switch (tmpSATA->typeSataUnit)
+			{
+			case 's':
+			case 'h':cout << "HDD/SSD: "; break;
+			case 'r':cout << "ROM: "; break;
+			default:
+				cout << "N/A: ";
+			}
 			cout << *tmpSATA << endl;
 		}
 	}
@@ -661,20 +670,14 @@ void MotherBoard::addSATA(Box* box) {
 		//find
 		if (selectName==p->name) {
 			sata[curSATAUnit] = p;
-			p = 0;//del link from vector, last pointer in motherboard
-			//not copy (work with pointer)
-			//drow
 			box->rect(21, 2 + curSATAUnit * 3, 28, 3 + curSATAUnit * 3, '1');
-			
 			//end 
 			curSATAUnit++;
 			break;//for vPow
 		}
-
+		else if (p)
+			delete p;//free vector (free SATA object) buf one sata object lost
 	}
-	//free vector (free SATA object)
-	for (SATA* p : vPow)
-		if (p) delete p;
 	f.close();
 }
 
@@ -820,7 +823,7 @@ void GPU::newGPU() {
 
 //RAM
 RAM::~RAM() {
-	cout << "free GPU\n";
+	//cout << "free RAM\n";
 }
 RAM::RAM() {
 	name = 0;
@@ -879,6 +882,7 @@ ostream& operator<<(ostream& out, const RAM& ram) {
 		<< ram.memVolume << "GB DDR" << ram.type;
 	return out;
 }
+
 //SATA
 SATA::~SATA() { cout << "free SATA\n"; }
 void SATA::maininput(){
@@ -916,7 +920,7 @@ void SATA::maininput(){
 				f.write((char*)& lenght, sizeof(lenght));
 				f.write(additionInfo.c_str(), lenght);
 				//save for children class
-				//this->wrt(f);//----------------------===========
+				this->wrt(f);//----------------------===========
 			}
 			f.close();
 			break;
@@ -927,7 +931,7 @@ void SATA::maininput(){
 	} while (true);
 }
 ostream& operator<<(ostream& out, const SATA& obj) {
-	out << obj.name << ' ' << obj.additionInfo;// << obj.print();
+	out << obj.name << ' ' << obj.additionInfo << obj.print();
 	return out;
 }
 
@@ -947,7 +951,7 @@ void Drive::inpt() {
 	cin.getline(buf, 99);
 }
 void Drive::wrt(ofstream& f) {
-	f.write((const char*)&volume, sizeof(int));
+	f.write((char*)&volume, sizeof(int));
 }
 void Drive::rd(ifstream& f) {
 	f.read((char*)&volume, sizeof(int));
@@ -971,12 +975,11 @@ void ROM::inpt() {
 	cin.getline(buf, 99);
 }
 void ROM::wrt(ofstream& f) {
-	f.write((const char*)&typeDisk, 1);
+	f.write(&typeDisk, 1);
 }
 void ROM::rd(ifstream& f) {
 	f.read(&typeDisk, 1);
 }
-
 string ROM::print() const{
 	
 	switch (typeDisk)
